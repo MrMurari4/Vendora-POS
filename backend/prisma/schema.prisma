@@ -1,0 +1,72 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Defining Roles
+enum Role {
+  ADMIN
+  CASHIER
+}
+
+// 2. The User Table
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password_hash String
+  role          Role      @default(CASHIER)
+  created_at    DateTime  @default(now())
+  
+  // A cashier can create many invoices
+  invoices      Invoice[]
+}
+
+// 3. The Product Table
+model Product {
+  id             String    @id @default(uuid())
+  name           String
+  sku            String    @unique
+  category       String?
+  price          Float
+  stock_quantity Int       @default(0)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // A product can be in many invoice items
+  invoice_items  InvoiceItem[]
+}
+
+// 4. The Invoice Table (The Bill)
+model Invoice {
+  id             String    @id @default(uuid())
+  total_amount   Float
+  tax_amount     Float     @default(0)
+  discount       Float     @default(0)
+  payment_method String    // e.g., "CASH", "UPI", "CARD"
+  customer_phone String?
+  created_at     DateTime  @default(now())
+
+  // Relations
+  cashier_id     String
+  cashier        User      @relation(fields: [cashier_id], references: [id])
+  items          InvoiceItem[]
+}
+
+// 5. The Invoice Items Table (Items inside the bill)
+model InvoiceItem {
+  id             String    @id @default(uuid())
+  quantity       Int
+  price_at_sale  Float     // Crucial: Saves the price at the exact moment of sale
+
+  // Relations
+  invoice_id     String
+  invoice        Invoice   @relation(fields: [invoice_id], references: [id])
+  product_id     String
+  product        Product   @relation(fields: [product_id], references: [id])
+}
