@@ -67,8 +67,8 @@ To run this project locally, you will need **Node.js** and a **PostgreSQL** inst
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/yourusername/nexus-pos.git](https://github.com/yourusername/nexus-pos.git)
-cd nexus-pos
+git clone [https://github.com/yourusername/Vendora-POS.git](https://github.com/yourusername/Vendora-POS.git)
+cd Vendora-POS
 ```
 
 ### 2. Backend Setup (NestJS)
@@ -114,7 +114,7 @@ npm run dev
 ## 📂 Project Structure
 
 ```text
-📦 nexus-pos
+📦 Vendora-POS
  ┣ 📂 backend                 # NestJS Application
  ┃ ┣ 📂 prisma                # Database Schema & Migrations
  ┃ ┣ 📂 src
