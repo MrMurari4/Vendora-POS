@@ -9,7 +9,7 @@
 
 An end-to-end, full-stack Point of Sale (POS) system engineered for high-speed retail environments. Featuring a secure, transaction-safe backend and a dual-themed frontend, this project handles everything from role-based authentication to native A4 PDF receipt generation. 
 
-Developed as an advanced computer science project at KLE Technological University, Belagavi, it demonstrates production-ready architectural patterns and enterprise-grade state management.
+Developed as an advanced computer science project, it demonstrates production-ready architectural patterns and enterprise-grade state management.
 
 ---
 
