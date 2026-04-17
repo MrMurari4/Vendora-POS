@@ -1,4 +1,4 @@
-# 🛒 Vendora POS
+# 🛒 Vendora POS: Retail Management System
 
 ![Next.js](https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![NestJS](https://img.shields.io/badge/nestjs-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
@@ -9,7 +9,7 @@
 
 An end-to-end, full-stack Point of Sale (POS) system engineered for high-speed retail environments. Featuring a secure, transaction-safe backend and a dual-themed frontend, this project handles everything from role-based authentication to native A4 PDF receipt generation. 
 
-Developed as an advanced computer science project at KLE Technological University, Belagavi, it demonstrates production-ready architectural patterns and enterprise-grade state management.
+Developed as an advanced computer science project, it demonstrates production-ready architectural patterns and enterprise-grade state management.
 
 ---
 
@@ -67,8 +67,8 @@ To run this project locally, you will need **Node.js** and a **PostgreSQL** inst
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/yourusername/nexus-pos.git](https://github.com/yourusername/nexus-pos.git)
-cd nexus-pos
+git clone [https://github.com/yourusername/Vendora-POS.git](https://github.com/yourusername/Vendora-POS.git)
+cd Vendora-POS
 ```
 
 ### 2. Backend Setup (NestJS)
@@ -114,7 +114,7 @@ npm run dev
 ## 📂 Project Structure
 
 ```text
-📦 nexus-pos
+📦 Vendora-POS
  ┣ 📂 backend                 # NestJS Application
  ┃ ┣ 📂 prisma                # Database Schema & Migrations
  ┃ ┣ 📂 src
