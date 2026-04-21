@@ -26,6 +26,7 @@ export default function AdminDashboard() {
     phone: "+91 98765 43210",
     email: "billing@nexustech.in",
     gstin: "29ABCDE1234F1Z5",
+    qrCodeImage: "",
   });
 
   const [isAdding, setIsAdding] = useState(false);
@@ -109,6 +110,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleQRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setStoreDetails({ ...storeDetails, qrCodeImage: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("pos_token");
     localStorage.removeItem("pos_user");
@@ -182,7 +194,23 @@ export default function AdminDashboard() {
                 <form onSubmit={handleAddProduct} className="space-y-5">
                   <div>
                     <label className="block text-sm font-medium text-slate-400 mb-2">Product Name</label>
-                    <input required type="text" value={newProduct.name} onChange={(e) => setNewProduct({...newProduct, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="e.g. RTX 4090" />
+                  <input 
+                    required 
+                    type="text" 
+                    value={newProduct.name} 
+                    onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                    minLength={3}
+                    maxLength={100}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      newProduct.name && newProduct.name.length < 3
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500/50'
+                    }`}
+                    placeholder="e.g. RTX 4090" 
+                  />
+                  {newProduct.name && newProduct.name.length < 3 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Product name must be at least 3 characters</p>
+                  )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -197,14 +225,73 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-2">Price (₹)</label>
-                      <input required type="number" step="0.01" value={newProduct.price} onChange={(e) => setNewProduct({...newProduct, price: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="0.00" />
+                      <input 
+                        required 
+                        type="number" 
+                        step="0.01" 
+                        value={newProduct.price} 
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          // Allow empty string so user can clear the field
+                          if (inputValue === '') {
+                            setNewProduct({...newProduct, price: inputValue});
+                          } else {
+                            const val = parseFloat(inputValue);
+                            // Only update if it's a valid positive number
+                            if (!isNaN(val) && val >= 0) {
+                              setNewProduct({...newProduct, price: inputValue});
+                            }
+                          }
+                        }}
+                        min="0"
+                        className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                          newProduct.price && parseFloat(newProduct.price) < 0
+                            ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                            : 'border-slate-800 text-white focus:ring-blue-500/50'
+                        }`}
+                        placeholder="0.00" 
+                      />
+                      {newProduct.price && parseFloat(newProduct.price) < 0 && (
+                        <p className="text-xs text-red-400 mt-1 font-medium">Price must be a positive number</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-2">Stock Qty</label>
-                      <input required type="number" value={newProduct.stock_quantity} onChange={(e) => setNewProduct({...newProduct, stock_quantity: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="0" />
+                      <input 
+                        required 
+                        type="number" 
+                        value={newProduct.stock_quantity} 
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          // Allow empty string so user can clear the field
+                          if (inputValue === '') {
+                            setNewProduct({...newProduct, stock_quantity: inputValue});
+                          } else {
+                            const val = parseInt(inputValue);
+                            // Only update if it's a valid non-negative number
+                            if (!isNaN(val) && val >= 0) {
+                              setNewProduct({...newProduct, stock_quantity: inputValue});
+                            }
+                          }
+                        }}
+                        min="0"
+                        className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                          newProduct.stock_quantity && parseInt(newProduct.stock_quantity) < 0
+                            ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                            : 'border-slate-800 text-white focus:ring-blue-500/50'
+                        }`}
+                        placeholder="0" 
+                      />
+                      {newProduct.stock_quantity && parseInt(newProduct.stock_quantity) < 0 && (
+                        <p className="text-xs text-red-400 mt-1 font-medium">Stock must be a non-negative number</p>
+                      )}
                     </div>
                   </div>
-                  <button disabled={isAdding} type="submit" className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] flex justify-center items-center">
+                  <button 
+                    disabled={isAdding || newProduct.name.length < 3 || parseFloat(newProduct.price) < 0 || parseInt(newProduct.stock_quantity) < 0} 
+                    type="submit" 
+                    className="w-full mt-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] flex justify-center items-center"
+                  >
                     {isAdding ? <Loader2 className="animate-spin" /> : "Execute Database Write"}
                   </button>
                 </form>
@@ -253,19 +340,69 @@ export default function AdminDashboard() {
               
               <form onSubmit={handleCreateStaff} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Full Name</label>
-                  <input required type="text" value={newStaff.name} onChange={(e) => setNewStaff({...newStaff, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. John Doe" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Full Name (Min 3 chars)</label>
+                  <input 
+                    required 
+                    type="text" 
+                    value={newStaff.name} 
+                    onChange={(e) => setNewStaff({...newStaff, name: e.target.value})}
+                    minLength={3}
+                    maxLength={100}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      newStaff.name && newStaff.name.length < 3
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                    placeholder="e.g. John Doe" 
+                  />
+                  {newStaff.name && newStaff.name.length < 3 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Name must be at least 3 characters</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-2">Login Email</label>
-                  <input required type="email" value={newStaff.email} onChange={(e) => setNewStaff({...newStaff, email: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="john@nexustech.in" />
+                  <input 
+                    required 
+                    type="email" 
+                    value={newStaff.email} 
+                    onChange={(e) => setNewStaff({...newStaff, email: e.target.value})}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      newStaff.email && !newStaff.email.includes('@')
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                    placeholder="john@nexustech.in" 
+                  />
+                  {newStaff.email && !newStaff.email.includes('@') && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Secure Password</label>
-                  <input required type="password" value={newStaff.password} onChange={(e) => setNewStaff({...newStaff, password: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Secure Password (Min 8 chars)</label>
+                  <input 
+                    required 
+                    type="password" 
+                    value={newStaff.password} 
+                    onChange={(e) => setNewStaff({...newStaff, password: e.target.value})}
+                    minLength={8}
+                    maxLength={50}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      newStaff.password && newStaff.password.length < 8
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                    placeholder="••••••••" 
+                  />
+                  {newStaff.password && newStaff.password.length < 8 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Password must be at least 8 characters</p>
+                  )}
                 </div>
                 <div className="pt-4">
-                  <button disabled={isCreatingStaff} type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] flex justify-center items-center">
+                  <button 
+                    disabled={isCreatingStaff || newStaff.name.length < 3 || !newStaff.email.includes('@') || newStaff.password.length < 8} 
+                    type="submit" 
+                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] flex justify-center items-center"
+                  >
                     {isCreatingStaff ? <Loader2 className="animate-spin" /> : "Authorize & Create Account"}
                   </button>
                 </div>
@@ -293,32 +430,116 @@ export default function AdminDashboard() {
             <form onSubmit={handleSaveStoreSettings} className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Registered Store Name</label>
-                  <input type="text" value={storeDetails.name} onChange={(e) => setStoreDetails({...storeDetails, name: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Registered Store Name (Min 3 chars)</label>
+                  <input 
+                    type="text" 
+                    value={storeDetails.name} 
+                    onChange={(e) => setStoreDetails({...storeDetails, name: e.target.value})}
+                    minLength={3}
+                    maxLength={100}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      storeDetails.name && storeDetails.name.length < 3
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                  />
+                  {storeDetails.name && storeDetails.name.length < 3 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Store name must be at least 3 characters</p>
+                  )}
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Street Address</label>
-                  <input type="text" value={storeDetails.address} onChange={(e) => setStoreDetails({...storeDetails, address: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Street Address (Min 5 chars)</label>
+                  <input 
+                    type="text" 
+                    value={storeDetails.address} 
+                    onChange={(e) => setStoreDetails({...storeDetails, address: e.target.value})}
+                    minLength={5}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      storeDetails.address && storeDetails.address.length < 5
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                  />
+                  {storeDetails.address && storeDetails.address.length < 5 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Address must be at least 5 characters</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-2">City & Pincode</label>
                   <input type="text" value={storeDetails.city} onChange={(e) => setStoreDetails({...storeDetails, city: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">GSTIN (Tax ID)</label>
-                  <input type="text" value={storeDetails.gstin} onChange={(e) => setStoreDetails({...storeDetails, gstin: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">GSTIN (Tax ID) - 15 Characters</label>
+                  <input 
+                    type="text" 
+                    value={storeDetails.gstin} 
+                    onChange={(e) => setStoreDetails({...storeDetails, gstin: e.target.value.toUpperCase()})} 
+                    maxLength={15}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      storeDetails.gstin && storeDetails.gstin.length !== 15
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`} 
+                  />
+                  {storeDetails.gstin && storeDetails.gstin.length !== 15 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">GSTIN must be exactly 15 characters ({storeDetails.gstin.length}/15)</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-2">Support Email</label>
-                  <input type="email" value={storeDetails.email} onChange={(e) => setStoreDetails({...storeDetails, email: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input 
+                    type="email" 
+                    value={storeDetails.email} 
+                    onChange={(e) => setStoreDetails({...storeDetails, email: e.target.value})}
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      storeDetails.email && !storeDetails.email.includes('@')
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                  />
+                  {storeDetails.email && !storeDetails.email.includes('@') && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Please enter a valid email address</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Support Phone</label>
-                  <input type="text" value={storeDetails.phone} onChange={(e) => setStoreDetails({...storeDetails, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Support Phone - 10 Digits</label>
+                  <input 
+                    type="text" 
+                    value={storeDetails.phone} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 10) setStoreDetails({...storeDetails, phone: val});
+                    }}
+                    placeholder="e.g. 9876543210"
+                    className={`w-full bg-slate-950 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all ${
+                      storeDetails.phone && storeDetails.phone.length !== 10
+                        ? 'border-red-500 text-red-400 focus:ring-red-500/50'
+                        : 'border-slate-800 text-white focus:ring-blue-500'
+                    }`}
+                  />
+                  {storeDetails.phone && storeDetails.phone.length !== 10 && (
+                    <p className="text-xs text-red-400 mt-1 font-medium">Phone must be exactly 10 digits ({storeDetails.phone.length}/10)</p>
+                  )}
                 </div>
               </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-400 mb-2">Upload UPI QR Code (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleQRUpload}
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-500 hover:file:bg-blue-500/20 transition-all"
+                />
+                {storeDetails.qrCodeImage && <img src={storeDetails.qrCodeImage} alt="QR Preview" className="mt-3 h-24 w-24 rounded-lg border border-slate-700 object-cover" />}
+              </div>
               <div className="pt-6 border-t border-slate-800 flex justify-end">
-                <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]">Save Configuration</button>
+                <button 
+                  type="submit" 
+                  disabled={storeDetails.phone && storeDetails.phone.length !== 10 || storeDetails.gstin && storeDetails.gstin.length !== 15}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+                >
+                  Save Configuration
+                </button>
               </div>
             </form>
           </motion.div>

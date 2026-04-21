@@ -15,6 +15,8 @@ export default function CashierPOS() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [lastInvoice, setLastInvoice] = useState<any>(null);
   const [isUPIScanning, setIsUPIScanning] = useState(false);
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [cardData, setCardData] = useState({ number: '', exp: '', cvv: '' });
 
   // Search & Customer State
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,7 +103,8 @@ export default function CashierPOS() {
 
   const triggerCheckoutFlow = () => {
     if (paymentMethod === "UPI") setIsUPIScanning(true);
-    else executeDatabaseCheckout();
+    else if (paymentMethod === "CARD") setIsCardModalOpen(true);
+    else executeDatabaseCheckout(); // Cash goes straight through
   };
 
   const executeDatabaseCheckout = async () => {
@@ -156,7 +159,7 @@ export default function CashierPOS() {
         <div className="flex-1 p-8 flex flex-col h-screen relative z-10">
           
           {/* HEADER */}
-          <header className="flex justify-between items-center mb-8 bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-slate-200 shadow-sm">
+          <header className="relative z-50 flex justify-between items-center mb-8 bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Store size={24} />
@@ -296,42 +299,57 @@ export default function CashierPOS() {
           </div>
 
           {/* CHECKOUT PANEL */}
-          <div className="p-6 bg-white border-t border-slate-100 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] z-30 relative rounded-t-3xl">
+          <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] z-30 relative rounded-t-3xl">
             
-            <div className="mb-5 relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors"><Phone size={18} /></div>
+            {/* STRICT PHONE VALIDATION */}
+            <div className="mb-4 relative group">
+              <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors ${
+                customerPhone && customerPhone.length !== 10 ? 'text-red-400' : 'text-slate-400'
+              }`}><Phone size={16} /></div>
               <input 
-                type="tel" 
-                placeholder="Customer Phone (Optional)" 
+                type="text" 
+                placeholder="Customer Phone (10 Digits)" 
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-800 font-medium rounded-xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, ''); // Removes all spaces and letters
+                  if (val.length <= 10) setCustomerPhone(val);   // Limits to 10
+                }}
+                className={`w-full bg-slate-50 border font-medium rounded-xl pl-12 pr-4 py-2.5 focus:outline-none focus:ring-2 transition-all text-sm ${
+                  customerPhone && customerPhone.length !== 10 
+                    ? 'border-red-300 text-red-700 focus:ring-red-500/50' 
+                    : 'border-slate-200 text-slate-800 focus:ring-blue-500/50'
+                }`}
               />
+              {customerPhone && customerPhone.length !== 10 && (
+                <p className="text-xs text-red-500 mt-1 font-medium">Phone must be exactly 10 digits ({customerPhone.length}/10)</p>
+              )}
             </div>
 
-            <div className="space-y-2.5 mb-5 text-sm font-medium text-slate-500 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            {/* TOTALS AREA (Slightly compressed padding) */}
+            <div className="space-y-1.5 mb-4 text-sm font-medium text-slate-500 bg-slate-50 p-3 rounded-2xl border border-slate-100">
               <div className="flex justify-between"><span>Subtotal</span><span className="text-slate-700">₹{subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>CGST (9%)</span><span className="text-slate-700">₹{cgst.toFixed(2)}</span></div>
-              <div className="flex justify-between border-b border-slate-200 pb-3"><span>SGST (9%)</span><span className="text-slate-700">₹{sgst.toFixed(2)}</span></div>
+              <div className="flex justify-between border-b border-slate-200 pb-2"><span>SGST (9%)</span><span className="text-slate-700">₹{sgst.toFixed(2)}</span></div>
               <div className="flex justify-between items-center pt-1">
-                <span className="font-bold text-lg text-slate-800 uppercase tracking-wider">Total</span>
-                <span className="text-3xl font-black text-blue-600">₹{grandTotal.toFixed(2)}</span>
+                <span className="font-bold text-slate-800 uppercase tracking-wider">Total</span>
+                <span className="text-2xl font-black text-blue-600">₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl font-bold transition-all ${paymentMethod === 'CASH' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-500/10' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><Banknote size={20} /> Cash</button>
-              <button onClick={() => setPaymentMethod("UPI")} className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl font-bold transition-all ${paymentMethod === 'UPI' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-500/10' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><QrCode size={20} /> UPI</button>
-              <button onClick={() => setPaymentMethod("CARD")} className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl font-bold transition-all ${paymentMethod === 'CARD' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-500/10' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><CreditCard size={20} /> Card</button>
+            {/* COMPACT PAYMENT BUTTONS */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <button onClick={() => setPaymentMethod("CASH")} className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl font-bold transition-all text-xs ${paymentMethod === 'CASH' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><Banknote size={16} /> Cash</button>
+              <button onClick={() => setPaymentMethod("UPI")} className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl font-bold transition-all text-xs ${paymentMethod === 'UPI' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><QrCode size={16} /> UPI</button>
+              <button onClick={() => setPaymentMethod("CARD")} className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl font-bold transition-all text-xs ${paymentMethod === 'CARD' ? 'border-2 border-blue-500 bg-blue-50 text-blue-700' : 'border border-slate-200 text-slate-500 hover:bg-slate-50'}`}><CreditCard size={16} /> Card</button>
             </div>
             
-            <button onClick={triggerCheckoutFlow} disabled={cart.length === 0 || isCheckingOut} className="w-full bg-slate-900 hover:bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 rounded-2xl transition-all duration-300 flex justify-center items-center h-16 shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:-translate-y-1 active:translate-y-0">
+            <button onClick={triggerCheckoutFlow} disabled={cart.length === 0 || isCheckingOut || (customerPhone && customerPhone.length !== 10)} className="w-full bg-slate-900 hover:bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-3 rounded-xl transition-all duration-300 flex justify-center items-center h-12">
               {isCheckingOut ? <Loader2 className="animate-spin" /> : `Charge ₹${grandTotal.toFixed(2)}`}
             </button>
           </div>
         </div>
 
-        {/* MODALS REMAIN UNCHANGED BELOW */}
+        {/* UPI MODAL (Now checks for Admin's custom QR) */}
         <AnimatePresence>
           {isUPIScanning && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
@@ -339,9 +357,109 @@ export default function CashierPOS() {
                 <button onClick={() => setIsUPIScanning(false)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><X /></button>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Scan to Pay</h2>
                 <p className="text-slate-500 mb-6 font-medium">Amount: <span className="text-blue-600 font-bold">₹{grandTotal.toFixed(2)}</span></p>
-                <div className="w-48 h-48 mx-auto bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center mb-6"><QrCode size={100} className="text-slate-400" /></div>
+                
+                <div className="w-48 h-48 mx-auto bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center mb-6 overflow-hidden">
+                  {/* If Admin uploaded a QR, show it. Otherwise show default icon */}
+                  {(storeDetails as any).qrCodeImage ? (
+                    <img src={(storeDetails as any).qrCodeImage} alt="Store UPI QR" className="w-full h-full object-contain" />
+                  ) : (
+                    <QrCode size={100} className="text-slate-400" />
+                  )}
+                </div>
+                
                 <p className="text-sm text-slate-400 mb-6 animate-pulse">Waiting for customer payment...</p>
                 <button onClick={executeDatabaseCheckout} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg shadow-green-500/30"><CheckCircle2 /> Proceed (Payment Received)</button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* SECURE CARD PAYMENT MODAL */}
+        <AnimatePresence>
+          {isCardModalOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full relative text-left">
+                <button onClick={() => { setIsCardModalOpen(false); setCardData({ number: '', exp: '', cvv: '' }); }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"><X /></button>
+                <h2 className="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2"><CreditCard /> Card Terminal</h2>
+                <p className="text-slate-500 mb-6 font-medium text-sm">Processing charge for: <span className="text-blue-600 font-bold">₹{grandTotal.toFixed(2)}</span></p>
+                
+                <div className="space-y-4 mb-2">
+                  {/* CARD NUMBER */}
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Card Number</label>
+                    <input 
+                      type="text" 
+                      maxLength={19} /* 16 digits + 3 spaces */
+                      placeholder="0000 0000 0000 0000" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none tracking-widest font-mono text-sm transition-all" 
+                      value={cardData.number}
+                      onChange={(e) => {
+                        // Strip all non-digits, then add a space every 4 digits
+                        const rawDigits = e.target.value.replace(/\D/g, '');
+                        const formatted = rawDigits.replace(/(.{4})/g, '$1 ').trim();
+                        setCardData({...cardData, number: formatted});
+                      }} 
+                    />
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    {/* EXPIRY DATE */}
+                    <div className="flex-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Expiry</label>
+                      <input 
+                        type="text" 
+                        maxLength={5} 
+                        placeholder="MM/YY" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm text-center transition-all" 
+                        value={cardData.exp}
+                        onChange={(e) => {
+                          // Strip non-digits, auto-insert slash after month
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.length > 2) {
+                            val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                          }
+                          setCardData({...cardData, exp: val});
+                        }} 
+                      />
+                    </div>
+
+                    {/* CVV (NOW VISIBLE) */}
+                    <div className="flex-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">CVV</label>
+                      <input 
+                        type="text" // Changed from password to text for rapid cashier verification
+                        maxLength={3} // 3 standard, 4 for Amex
+                        placeholder="123" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm text-center tracking-widest transition-all" 
+                        value={cardData.cvv}
+                        onChange={(e) => {
+                          // Strip all non-digits entirely
+                          const val = e.target.value.replace(/\D/g, '');
+                          setCardData({...cardData, cvv: val});
+                        }} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* DYNAMIC ERROR MESSAGING */}
+                <div className="h-6 mb-4 flex items-center">
+                  {(cardData.number.length > 0 && cardData.number.length < 19) || (cardData.exp.length > 0 && cardData.exp.length < 5) || (cardData.cvv.length > 0 && cardData.cvv.length < 3) ? (
+                    <p className="text-xs text-red-500 font-bold animate-pulse">⚠️ Please complete all card details.</p>
+                  ) : null}
+                </div>
+                
+                <button 
+                  onClick={() => { 
+                    setIsCardModalOpen(false); 
+                    setCardData({ number: '', exp: '', cvv: '' }); // Clear state on success
+                    executeDatabaseCheckout(); 
+                  }} 
+                  disabled={cardData.number.length < 19 || cardData.exp.length < 5 || cardData.cvv.length < 3}
+                  className="w-full bg-slate-900 hover:bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 shadow-lg"
+                >
+                  <CreditCard size={18} /> Process Payment
+                </button>
               </motion.div>
             </div>
           )}

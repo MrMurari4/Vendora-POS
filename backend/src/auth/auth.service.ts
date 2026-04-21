@@ -42,6 +42,11 @@ export class AuthService {
     };
   }
   async register(data: any) {
+    // 1. SECURE PASSWORD VALIDATION
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+    if (!passwordRegex.test(data.password)) {
+      throw new BadRequestException('Password must be at least 8 characters, and include at least one number and one symbol (!@#$%^&*).');
+    }
     // 1. Check if the user already exists to prevent duplicate emails
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
@@ -69,5 +74,25 @@ export class AuthService {
       userId: user.id,
       role: user.role
     };
+  }
+  async resetPassword(data: any) {
+    // 1. Find if the user exists
+    const user = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    // 2. Hash the NEW password securely
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+    // 3. Update the database
+    await this.prisma.user.update({
+      where: { email: data.email },
+      data: { password_hash: hashedPassword },
+    });
+
+    return { message: `Password for ${data.email} updated successfully!` };
   }
 }

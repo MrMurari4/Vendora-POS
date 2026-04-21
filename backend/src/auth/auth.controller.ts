@@ -18,4 +18,10 @@ export class AuthController {
   register(@Body() body: any) {
     return this.authService.register(body);
   }
+
+  // 👇 ADD THIS NEW ROUTE 👇
+  @Post('reset-password')
+  resetPassword(@Body() body: any) {
+    return this.authService.resetPassword(body);
+  }
 }
